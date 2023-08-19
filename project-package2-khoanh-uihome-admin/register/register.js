@@ -18,6 +18,3 @@ $(document).ready(function () {
 
     });
 });
-function login(){
-    window.location.href = "../login/index.html"
-}
