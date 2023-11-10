@@ -3,11 +3,7 @@ var listManufacturer = [];
 var listCategory = [];
 var idUpdate = "";
 
-
-
-
 $(function () {
- 
  var isLoggedIn = localStorage.getItem("isLoggedIn");
   if(!isLoggedIn){
     
@@ -22,7 +18,6 @@ $(function () {
   $("#filter-categorys").load("./filterCategorys.html");
   handleShowProduct();
 });
-
   // localStorage.setItem("listProduct", JSON.stringify(listProduct));
   // localStorage.setItem("listCategory", JSON.stringify(listCategory));
   // localStorage.setItem("listManufacturer", JSON.stringify(listManufacturer));
@@ -84,38 +79,45 @@ function checkLocal() {
 }
 
 function fetchListProduct() {
-  const listProductLocal = JSON.parse(localStorage.getItem("listProduct"));
+  // const listProductLocal = JSON.parse(localStorage.getItem("listProduct"));
   const listManufacturerLocal = JSON.parse(localStorage.getItem("listManufacturer"));
   const listCategoryLocal = JSON.parse(localStorage.getItem("listCategory"));
 
-  listProduct = listProductLocal ? listProductLocal : [];
+  // listProduct = listProductLocal ? listProductLocal : [];
   listManufacturer = listManufacturerLocal ? listManufacturerLocal : []
   listCategory = listCategoryLocal ? listCategoryLocal : []
   fetchListManufactureAdmin();
   fetchListCategoryAdmin();
 
-
   $("#tbProductAdmin").empty();
-
-  listProduct.forEach(product => {
-    $("#tbProductAdmin").append(`
-    <tr style="vertical-align: middle">
-      <td  class = 'timkiem'>${product.id}</td>
-      <td >${product.name}</td>
-      <td>${product.price}</td>
-      <td>${product.info}</td>
-      <td>${product.detail}</td>
-      <td>${product.ratingStar}</td>
-      <td> <img style="width: 50px; height: 50px" src="${product.imageName}"/> </td>
-      <td>${listManufacturer.filter((manufacture) => manufacture.id === +product.manufacturerID)[0].name}</td>
-      <td>${listCategory.filter((category) => category.id === +product.categoryID)[0].name}</td>
-      <td> <button onclick="handleEditProduct(${product.id})" type="button" class="btn btn-warning"> Edit </button> </td>
-      <td> <button onClick="handleDeleteProduct(${product.id})" type="button" class="btn btn-danger">Delete</button> </td>
-    </tr>
-    `)
-  });
+$.ajax({
+  type:"GET",
+  url:"https://64e319a6bac46e480e782be5.mockapi.io/productss",
+  success: function(res, status){
+    if(status === "success"){
+       listProduct = res;
+       listProduct.forEach(product => {
+        $("#tbProductAdmin").append(`
+        <tr style="vertical-align: middle">
+          <td  class = 'timkiem'>${product.id}</td>
+          <td >${product.name}</td>
+          <td>${product.price}</td>
+          <td>${product.info}</td>
+          <td>${product.detail}</td>
+          <td>${product.ratingStar}</td>
+          <td> <img style="width: 50px; height: 50px" src="${product.imageName}"/> </td>
+          <td>${listManufacturer.filter((manufacture) => manufacture.id === +product.manufacturerID)[0]?.name}</td>
+          <td>${listCategory.filter((category) => category.id === +product.categoryID)[0]?.name}</td>
+          <td> <button onclick="handleEditProduct(${product.id})" type="button" class="btn btn-warning"> Edit </button> </td>
+          <td> <button onClick="handleDeleteProduct(${product.id})" type="button" class="btn btn-danger">Delete</button> </td>
+        </tr>
+        `)
+      });
+    }
+  }
+  
+})
 }
-
 function handleEditProduct(id) {
   idUpdate = id;
   const index = listProduct.findIndex((product) => +product.id === +id);
@@ -143,12 +145,20 @@ function handleUpdateProduct() {
     categoryID: $("#CategoryUpdate").val(),
   }
 
-  const index = listProduct.findIndex((product) => +product.id === +idUpdate);
-  listProduct[index] = data;
-  localStorage.setItem("listProduct", JSON.stringify(listProduct));
-  fetchListProduct();
+  // const index = listProduct.findIndex((product) => +product.id === +idUpdate);
+  // listProduct[index] = data;
+  // localStorage.setItem("listProduct", JSON.stringify(listProduct));
+  $.ajax({
+    type:"PUT",
+    url:`https://64e319a6bac46e480e782be5.mockapi.io/productss/${idUpdate}`,
+    data: data,
+    success:function(res, status){
+      fetchListProduct();
   $("#ModalUpdateProduct").modal("hide");
+    }
+  })
 }
+
 function handleResetUpdate() {
   $("#NameUpdate").val("");
   $("#PriceUpdate").val("");
@@ -170,14 +180,22 @@ function handleDeleteProduct(id) {
   })
     .then((willDelete) => {
       if (willDelete) {
-        const data = listProduct.filter((product) => +product.id !== +id);
-        localStorage.setItem("listProduct", JSON.stringify(data));
-        setTimeout(() => {
-          fetchListProduct();
-        }, 500);
-        swal("deleted!", {
-          icon: "success",
-        });
+        // const data = listProduct.filter((product) => +product.id !== +id);
+        // localStorage.setItem("listProduct", JSON.stringify(data));
+        // setTimeout(() => {
+        //   fetchListProduct();
+        // }, 500);
+        $.ajax({
+          type:"DELETE",
+          url:`https://64e319a6bac46e480e782be5.mockapi.io/productss/${id}`,
+          success:function(res, status){
+            fetchListProduct();
+            swal("deleted!", {
+              icon: "success",
+            });
+          }
+        })
+       
       } else {
         swal.close();
       }
@@ -251,10 +269,20 @@ function CreateNewProduct() {
     manufacturerID: $("#Manufacturer").val(),
     categoryID: $("#Category").val(),
   }
-  listProduct.push(data);
-  localStorage.setItem("listProduct", JSON.stringify(listProduct));
-  fetchListProduct();
-  $("#ModalCreateProduct").modal("hide");
+  if(data.name ==""){
+    alert("vui lòng nhập name...")
+  }
+  // listProduct.push(data);
+  // localStorage.setItem("listProduct", JSON.stringify(listProduct));
+  $.ajax({
+    type:"POST",
+    url:"https://64e319a6bac46e480e782be5.mockapi.io/productss",
+    data :data,
+    success:function(res, status){
+      fetchListProduct();
+      $("#ModalCreateProduct").modal("hide");
+    }
+  })
 }
 
 //manufacture
@@ -371,7 +399,7 @@ function timkiem() {
   for (let i = 0; i < productRows.length; i++) {
     var productId = productRows[i].getElementsByClassName("timkiem")[0].innerText.toLowerCase();
     if (productId.includes(searchTerm)) {
-      productRows[i].style.display = 'table-row';
+      productRows[i].style.display = 'block';
     } else {
       productRows[i].style.display = 'none';
     }

@@ -7,6 +7,7 @@ $(document).ready(function () {
         if(password < 6){
             $('#password-error').text("Password phải có ít nhất trên 6 kí tự")
             $("#password-error").css("text-align","center")
+            $("#password-error")
             return;
         }
         var newUser = {
